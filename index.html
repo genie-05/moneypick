@@ -156,6 +156,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--pape
 #key i{display:inline-block;vertical-align:middle;margin-right:5px}
 #key .p{width:9px;height:9px;background:var(--mark);border-radius:50%}
 #key .w{width:9px;height:9px;background:var(--paper);border:2px solid var(--mark);border-radius:50%}
+#key .g{width:9px;height:9px;background:#1E1B22;border-radius:50%}
 #key .r{width:16px;height:0;border-top:2px dashed var(--route-soft)}
 #key .s{width:9px;height:9px;background:#4F5148;border:1px solid #8E8A80}
 #key .a{width:7px;height:9px;background:#FB4FF0;border:1px solid rgba(0,0,0,.4)}
@@ -351,6 +352,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--pape
   <div id="key">
     <span><i class="p"></i>팬딩 인원</span>
     <span><i class="w"></i>외부 인력 · 이름 미기재</span>
+    <span><i class="g"></i>경호팀</span>
     <span><i class="r"></i>선택 인물 이동</span>
     <span><i class="s"></i>1층 출입 불가 구역</span>
     <span class="sep"></span>
@@ -396,7 +398,7 @@ const VPOS=[ // 줄관리 15명 자리 (우천 10-12 · Figma 402:2. 이전: Fig
 ["Q5",67.60,-3.00,"1F","비회원 9"],["Q6",44.80,-14.00,"1F","비회원 7"],["Q7",6.20,-2.40,"1F","회원 5"],["Q8",0.60,-17.60,"1F","회원 4"],
 ["Q9",66.60,-22.40,"1F","비회원 6"],["Q10",26.60,-30.90,"1F","회원 2"],["Q11",-20.00,-30.90,"1F","회원 1"],["Q12",69.00,-30.90,"1F","비회원 1"],
 ["Q13",87.50,-23.20,"1F","비회원 10"],["Q14",25.40,-17.60,"1F","회원 3"],["Q15",44.60,-3.60,"1F","비회원 8"],
-["H4",99.5,-17.5,"1F","학생회관 화장실 입구 앞"],["OP1",45.6,40.0,"1F","104 콘솔"]];
+["H4",99.5,-17.5,"1F","학생회관 화장실 입구 앞"],["QU1",17.0,-3.0,"1F","광장 위쪽 (회원 쪽)"],["QU2",46.5,-3.0,"1F","광장 위쪽 (부스 옆)"],["QU3",57.0,-3.0,"1F","광장 위쪽 (비회원 쪽)"],["OP1",45.6,40.0,"1F","104 콘솔"]];
 // 광장 줄 구조 (10-10, Figma 318:30 · 그리드 m). 리셉션 = 왼쪽 날개(111·112) 앞, 왼쪽 회원 | 오른쪽 비회원
 const RECEP={m:[-1.20,7.30],n:[49.20,64.60],y0:1.82,y1:4.34};   // 우천: 회원 = 왼쪽 날개 앞, 비회원 = 오른쪽 날개 앞
 const PHOTOWALL=[9.0,3.2,15.0,4.3];                   // 포토월 (회원 리셉션 오른쪽 벽 앞)
@@ -417,11 +419,20 @@ E7:"지하 화장실 계단 앞",E8:"지하 화장실 계단 앞",E3:"객석 중
 E9:"연사 통로 (무대측)",E10:"연사 통로 (무대측)",E33:"학생회관 화장실 동선 앞",E16:"2층 로비 왼쪽",E15:"2층 로비 오른쪽",E13:"발코니 왼쪽",E14:"발코니 오른쪽"};
 const POSMAP = {}; POS.forEach(p=>POSMAP[p[0]]={id:p[0],x:p[1],y:p[2],floor:p[3],label:POS_LABEL[p[0]]||p[4],virtual:false});
 VPOS.forEach(p=>POSMAP[p[0]]={id:p[0],x:p[1],y:p[2],floor:p[3],label:p[4],virtual:true});
+// 경호팀 자리 (교육 PDF 11쪽 배치 위치. 구역 핀과 따로 둠 → 다른 인원과 안 겹침)
+const GPOS=[["GD_G1",29.5,-9.4,"1F","입구 계단 앞 (현관 계단 아래)"],["GD_G2",35.5,-9.4,"1F","입구 계단 앞 (현관 계단 아래)"],
+ ["GD_A1",27.5,10.9,"1F","1층 객석 전면 게이트 앞"],["GD_A2",37.5,10.9,"1F","1층 객석 전면 게이트 앞"],
+ ["GD_B1",25.1,10.6,"2F","2층 객석 게이트 앞"],["GD_B2",38.67,10.6,"2F","2층 객석 게이트 앞"],
+ ["GD_S1",13.22,29.61,"1F","연사 통로 (무대측)"],["GD_S2",15.13,29.61,"1F","연사 통로 (무대측)"]];
+GPOS.forEach(p=>POSMAP[p[0]]={id:p[0],x:p[1],y:p[2],floor:p[3],label:p[4],virtual:true});
+const GUARD_PIN={gate:["GD_G1","GD_G2"],seat1:["GD_A1","GD_A2"],seat2:["GD_B1","GD_B2"],spk:["GD_S1","GD_S2"]};
+const isGuard=r=>/경호/.test(r.note||"");
 
 // 구역 [id, 시트 구역명, 핀(배치 순서)]. 핀 없는 구역(총괄본부·촬영팀)은 명단에만. 같은 핀을 두 구역이 쓸 수 있음(학생회관 앞).
 const ZONE_DEF = [
 ["hq",   "총괄본부",       []],
 ["park", "주차",           ["E30","E31"]],
+["plaza","광장 위쪽",      ["QU1","QU2","QU3"]],
 ["queue","대기열",         ["Q1","Q2","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q11","Q12","Q13","Q14","Q15"]],
 ["recM", "리셉션 (회원)",   ["E20","E19","E21"]],
 ["recN", "리셉션 (비회원)", ["E22","E23","E24"]],
@@ -434,7 +445,7 @@ const ZONE_DEF = [
 ["seat1","1층 객석",       ["E4","E2","E3","E1"]],
 ["hall2","2층 복도",       ["E16","E15"]],
 ["seat2","2층 객석",       ["E13","E14"]],
-["op",   "오퍼레이팅",      ["OP1"]],
+["op",   "오퍼레이팅",      []],   // 덩크 자리 미정 (지니 10-13: 1층 오퍼실에서 안 할 수도 있음) → 범돌 · 미르처럼 자리 없음
 ["spk",  "연사 통로",      ["E9","E10"]],
 ["inno", "이노베이 통로",   ["E12","E11"]],
 ["cam",  "촬영팀",         []],
@@ -452,7 +463,7 @@ const QDESC={Q11:"북쪽 인도 회원 줄 끝에서 줄 시작 안내 (12:30부
 const CALL={"범돌":"6:30","미르":"6:30","보니":"8:30","유니":"8:30","러러":"8:30","라일리":"6:30","아그네스":"6:30","모모":"8:30","애니":"8:30","엘리":"8:30","뼈누":"6:30","로더":"6:30","지니":"6:30","보리스":"6:30","에릭":"8:30","미키":"8:30","테디":"6:30","카이":"8:30","루카":"8:30","주니":"8:30","로라":"6:30","라떼":"6:30","보로":"8:30","우니":"8:30","리카":"8:30","준":"8:30","위즈":"8:30","베넷":"8:30","그로밋":"8:30","덩크":"6:30","세세":"8:30","카모":"8:30","파즈":"8:30","하디":"8:30","마일로":"8:30","주노":"8:30","시니":"8:30"};
 const MEAL={"범돌":"1조","미르":"2조","보니":"1조","유니":"1조","러러":"2조","라일리":"2조","아그네스":"1조","모모":"2조","애니":"2조","엘리":"2조","뼈누":"1조","로더":"1조","지니":"1조","보리스":"1조","에릭":"1조","미키":"2조","테디":"2조","카이":"2조","루카":"2조","주니":"1조","로라":"2조","라떼":"2조","보로":"1조","우니":"1조","리카":"2조","준":"1조","위즈":"2조","베넷":"1조","그로밋":"2조","덩크":"휴식","하디":"1조","파즈":"2조","세세":"자율","카모":"자율","마일로":"자율","주노":"자율","시니":"1조"};
 const MEAL_INFO={"1조":{t:"13:40~14:40",b:4,at:"이노베이 통로"},"2조":{t:"14:40~15:40",b:4,at:"이노베이 통로"},"휴식":{t:"15:50~16:20",b:5,at:""},"자율":{t:"세션 중 자율",b:-1,at:""}};   // 장소 · 시간 = PDF 13쪽
-// 세션 중 주차 교대 (PDF 13쪽: 1조 시간 카이, 2조 시간 지니가 대기열 교대조에서 주차로 투입)
+// 세션 중 주차 교대 (PDF 13쪽: 1조 시간 카이, 2조 시간 지니가 대기열 잔여 입장 확인 9명 중에서 주차로 투입)
 const PNOTE={"카이":{4:"13:40~14:40 주차 교대 (베넷)"},"지니":{4:"14:40~15:40 주차 교대 (그로밋)"}};
 const BLOCKS = [
 {t0:"07:00",t1:"09:00",name:"반입 · 검수",rows:[
@@ -461,10 +472,10 @@ const BLOCKS = [
  [REC,"리셉션 위치·구조 확정","보니, 유니, 러러, 라일리, 아그네스, 모모",6,null],   // 시트 D4 이름 빈칸 → 개인 타임테이블 기준
  ["cam","장비 반입·세팅",null,11,"덕션팀 · 08시 30분 집합"]]},
 {t0:"09:00",t1:"11:30",name:"브리핑 · 세팅",rows:[
- ["hq","전체 브리핑","범돌, 미르",2],
- [REC,"리셉션 준비","보니, 유니, 러러, 라일리, 아그네스, 모모",6,null],
+ ["hq","전체 브리핑/운영 전환","범돌, 미르",2],
+ [REC,"리셉션 총괄/리셉션 준비","보니, 유니, 러러, 라일리, 아그네스, 모모",6,null],
  ["queue","줄 구조 세팅","로더, 지니, 뼈누, 테디, 보리스, 보로, 우니, 리카, 시니",9,null,null,null,{nopin:1}],   // 줄 전체를 세팅 → 정해진 자리 없음
- [null,"안내물·X배너 설치","미키, 에릭, 로라, 카이, 루카, 라떼, 주니, 준, 위즈",9,null,"안내물"],
+ [null,"안내물/X배너 설치","미키, 에릭, 로라, 카이, 루카, 라떼, 주니, 준, 위즈",9,null,"안내물"],
  ["gate","입구 표지판 세팅","카모, 세세",2],
  ["park","주차 안내 요원","베넷, 그로밋",2],
  ["op","오퍼레이팅 리허설 준비","덩크",1],
@@ -473,7 +484,7 @@ const BLOCKS = [
  ["front","프론트 세팅","애니, 엘리",2],
  ["cam","외부 인서트 촬영",null,null,"덕션팀",null,null,{support:"세세, 카모, 파즈, 하디"}]]},
 {t0:"11:30",t1:"12:30",name:"입장 준비",rows:[
- ["hq","리허설 입회·개장 판단","범돌, 미르",2],
+ ["hq","리허설 입회/개장 판단","범돌, 미르",2],
  ["queue","줄 정렬·사전 안내","로더, 지니, 뼈누, 미키, 에릭, 로라, 카이, 보리스, 보로, 루카, 테디, 라떼, 주니, 시니, 하디",15,null,null,QROLE],
  ["recM","회원 확인처","보니, 유니, 러러",3],
  ["recN","비회원 확인처","라일리, 아그네스, 모모",3],
@@ -483,7 +494,7 @@ const BLOCKS = [
  ["seat1","출입 금지 안내물 부착",null,4,YON4],
  ["seat2","출입 금지 안내물 부착",null,2,YON2],
  ["front","프론트 운영 준비","애니, 엘리",2],
- ["op","오퍼레이팅 리허설","덩크",1],
+ ["op","오퍼레이팅 준비 및 리허설","덩크",1],
  ["hall1","1층 관객 안내 대기","우니, 리카",2],
  ["hall2","2층 관객 안내 대기","준, 위즈",2],
  ["inno","연세대학교 학생 출입 관리","파즈",1],
@@ -511,11 +522,11 @@ const BLOCKS = [
  ["cam","입장 스케치",null,null,"덕션팀",null,null,{support:"세세, 카모, 파즈, 하디"}]]},
 {t0:"13:30",t1:"15:50",name:"세션 1~3",rows:[
  ["hq","세션 총괄","범돌, 미르",2],
- ["recM","늦입장 회원 확인처","보니, 유니, 러러",3],
- ["recN","늦입장 비회원 확인처","라일리, 아그네스, 모모",3],
+ ["recM","늦입장 회원 확인처 (최소 운영)","보니, 유니, 러러",3],
+ ["recN","늦입장 비회원 확인처 (최소 운영)","라일리, 아그네스, 모모",3],
  ["park","주차 안내 요원","베넷, 그로밋",2],
  ["gate","입구 잔여 입장 확인","주니, 로라",2],
- ["queue","대기열 교대조","로더, 지니, 미키, 에릭, 카이, 보리스, 루카, 테디, 시니",9,null,null,null,{nopin:1}],   // 줄이 걷힌 뒤 → 번호 자리 아님
+ ["plaza","대기열 잔여 입장 확인 · 주차 교대/식사","로더, 지니, 미키, 에릭, 카이, 보리스, 루카, 테디, 시니",9,null,"대기열"],   // 지니 10-13: 광장 위쪽으로 몰기 (11:30~13:30 외에는 현장에서 유동)
  ["seat1","1층 객석 대응",null,4,YON4],
  ["seat1","전면 게이트 앞 경호",null,2,"경호팀 2인"],
  ["seat2","2층 객석 대응",null,2,YON2],
@@ -531,7 +542,7 @@ const BLOCKS = [
 {t0:"15:50",t1:"16:20",name:"휴식",rows:[
  ["hq","휴식 총괄","범돌, 미르",2],
  ["wc","대강당 화장실 안내","보로, 라떼",2],
- ["wcH","학생회관 화장실 유도","로더, 지니, 테디, 보리스, 에릭, 시니",6],   // 로더는 E33 고정 (PIN_FIX, 지니 9-15)
+ ["wcH","학생회관 화장실 유도·안내","로더, 지니, 테디, 보리스, 에릭, 시니",6],   // 로더는 E33 고정 (PIN_FIX, 지니 9-15)
  ["hall1","화장실·출구 안내 (1층)","카이, 루카, 우니, 리카",4],
  ["hall2","화장실·출구 안내 (2층)","준, 위즈, 보니, 유니",4],
  ["park","주차 안내 요원","베넷, 그로밋",2],
@@ -549,7 +560,7 @@ const BLOCKS = [
  ["cam","장비 정비/스케치",null,null,"덕션팀",null,null,{support:"마일로, 주노"}]]},
 {t0:"16:20",t1:"19:00",name:"세션 4~6",rows:[
  ["hq","세션 총괄","범돌, 미르",2],
- [REC,"리셉션 최소 운영","러러, 모모",2,"18:00 리셉션 주변 정리·철수"],
+ [REC,"리셉션 최소 운영 및 교대","러러, 모모",2,"18:00 리셉션 주변 정리·철수"],
  ["park","주차 안내 요원","베넷, 그로밋",2],
  ["gate","입구 잔여 입장 확인","주니, 로라",2],
  ["seat1","1층 객석 대응","라일리, 카이, 루카, 테디",4],
@@ -600,7 +611,7 @@ const BLOCKS = [
  ["hq","최종 마감","범돌, 미르",2],
  [REC,"리셉션 운영물 철수","보니, 유니, 러러, 라일리, 아그네스, 모모",6,null],
  [null,"배너·차단봉 철수","베넷, 그로밋, 주니, 로라, 라떼, 보로",6,null,"운영물"],
- [SEATS,"객석 잔여물 정리","로더, 지니, 보리스, 에릭, 미키, 테디, 카이, 루카, 우니, 리카, 준, 위즈, 덩크, 시니",14,null,"객석"],
+ [SEATS,"객석 잔여물 정리 마감","로더, 지니, 보리스, 에릭, 미키, 테디, 카이, 루카, 우니, 리카, 준, 위즈, 덩크, 시니",14,null,"객석"],
  ["front","분실물 최종 정리","애니, 엘리, 뼈누",3],
  ["cam","장비 반납·데이터 정리",null,null]]},
 ];
@@ -626,7 +637,7 @@ const PL = BLOCKS.map(()=>({people:{},ext:[],zoneInfo:{}}));
       const names=Array.isArray(r.names)?r.names:[];
       // 구역 요약
       zs.forEach(z=>{ const zi=out.zoneInfo[z]||(out.zoneInfo[z]={roles:[],notes:[],names:[],count:0,ext:false,src:null}); zi.roles.push(r.role); if(r.note) zi.notes.push(r.note); if(zs.length===1) zi.names.push(...names); if(r.src) zi.src=r.src;
-        if(!names.length&&r.names!=="REST"){ zi.ext=true; if(z==="cam") zi.team=true; const en=r.note||(z==="cam"?"덕션팀":"이름 미기재"); zi.extNote=zi.extNote&&zi.extNote!==en?zi.extNote+" + "+en:en; if(r.count!=null) zi.extCount=(zi.extCount||0)+r.count; } else if(zs.length===1) zi.count+=names.length; });
+        if(!names.length&&r.names!=="REST"){ zi.ext=true; if(isGuard(r)) zi.extG=true; else zi.extW=true; if(z==="cam") zi.team=true; const en=r.note||(z==="cam"?"덕션팀":"이름 미기재"); zi.extNote=zi.extNote&&zi.extNote!==en?zi.extNote+" + "+en:en; if(r.count!=null) zi.extCount=(zi.extCount||0)+r.count; } else if(zs.length===1) zi.count+=names.length; });
       if(!zs.length){ if(Array.isArray(r.names)) names.forEach(n=>{ out.people[n]=out.people[n]||{zone:null,role:r.role,note:r.note,pin:null,src:r.src}; }); return; }
       if(!pins.length||(r.opt&&r.opt.nopin)){ names.forEach(n=>{ out.people[n]={zone:zs[0],role:(r.pr&&r.pr[n])||r.role,note:r.note,pin:null}; }); return; }
       if(names.length){
@@ -637,8 +648,8 @@ const PL = BLOCKS.map(()=>({people:{},ext:[],zoneInfo:{}}));
         names.forEach(n=>{ const p=asg[n]; const zone=zs.find(z=>ZONE[z].pins.includes(p))||zs[0]; pref[n+"|"+zkey]=pref[n+"|"+zkey]||p; pref[n+"|"+zone]=pref[n+"|"+zone]||p;
           if(zs.length>1) out.zoneInfo[zone].names.push(n);
           out.people[n]={zone,role:(r.pr&&r.pr[n])||r.role,note:r.note,pin:p,src:r.src}; });
-      } else if(r.names!=="REST"){ // 외부 인력(연세대·경호팀) — 흰 핀
-        const n=r.count!=null?r.count:pins.length; for(let i=0;i<n;i++){ const p=pins[i%pins.length]; out.ext.push({zone:zs.find(z=>ZONE[z].pins.includes(p))||zs[0],pin:p,role:r.role,note:r.note||"이름 미기재"}); } }
+      } else if(r.names!=="REST"){ // 외부 인력 — 연세대 흰 핀 · 경호팀 검은 핀 (경호 자리 GUARD_PIN)
+        const gd=isGuard(r), gp=gd&&GUARD_PIN[zs[0]], pl=gp||pins; const n=r.count!=null?r.count:pl.length; for(let i=0;i<n;i++){ const p=pl[i%pl.length]; out.ext.push({zone:gp?zs[0]:(zs.find(z=>ZONE[z].pins.includes(p))||zs[0]),pin:p,role:r.role,note:r.note||"이름 미기재",guard:!!gd}); } }
     });
     // "잔여 인원" 행: 이 블록에 아직 배정 안 된 사람 전부
     B.rows.forEach(r=>{ if(r.names!=="REST") return; PEOPLE.forEach(n=>{ if(!out.people[n]&&!DUCTION.has(n)) out.people[n]={zone:null,role:r.role,note:null,pin:null,src:r.src}; }); });
@@ -989,7 +1000,7 @@ PRINTS.forEach(p=>{ const [x,y,kind,fl]=p; const g=G[fl]; const grp=new THREE.Gr
   const face=new THREE.Mesh(new THREE.PlaneGeometry(0.7,1.0),new THREE.MeshBasicMaterial({map:PRINT_TEX[kind],side:THREE.DoubleSide})); face.position.y=1.6+0.5; face.position.z=0.03;
   grp.add(post,face); grp.position.set(X(x),e,Z(y)); grp.userData={kind:"A4 · "+kind,floor:fl}; g.add(grp); LAYER.prints.push(grp); SIGNS.push(face); face.userData.grp=grp; });
 
-/* ───────────────────────── 핀 (● 팬딩 인원 · ○ 외부 인력/이름 미기재 = 흰 머리 + 붉은 고리) ───────────────────────── */
+/* ───────────────────────── 핀 (● 팬딩 인원 · ○ 외부 인력/이름 미기재 = 흰 머리 + 붉은 고리 · ● 경호팀 = 검정) ───────────────────────── */
 const PIN_HEAD=new THREE.SphereGeometry(0.42,18,12), PIN_POST=new THREE.CylinderGeometry(0.07,0.07,1.45,8), PIN_BASE=new THREE.RingGeometry(0.34,0.52,24), PIN_RING=new THREE.TorusGeometry(0.62,0.05,8,32), PIN_HOLLOW=new THREE.TorusGeometry(0.50,0.065,8,32);
 const pins={}; const pinHeads=[];
 function makePin(key,kind){
@@ -1177,7 +1188,7 @@ function refreshList(){ const o=PL[state.block], ZI=o.zoneInfo;
   document.querySelectorAll("#list .grpH").forEach(h=>{ const zid=h.dataset.z, zi=ZI[zid]; const off=!state.zones[zid]&&ZONE[zid].pins.length>0; h.classList.toggle("idle",!zi); h.classList.toggle("off",off);
     h.querySelector(".role").textContent=ziText(zi); h.querySelector(".n").textContent=zi?ziCount(zi):"—"; });
   document.querySelectorAll("#list .row").forEach(b=>{ const zid=b.dataset.zone, zi=ZI[zid]; const wh=b.querySelector(".where"), nm=b.querySelector(".name"), rl=b.querySelector(".role");
-    if(b.dataset.ext){ const on=!!(zi&&zi.ext); b.style.display=on?"":"none"; if(on){ nm.textContent=zi.extNote+(zi.extCount&&!/\d/.test(zi.extNote)?" · "+zi.extCount:""); rl.textContent=zi.roles.join(" · "); wh.className="where tbd"; wh.textContent=ZONE[zid].pins.length?"흰 핀":"자리 지정 없음"; b.classList.toggle("sel",state.selZone===zid); b.classList.toggle("off",!state.zones[zid]&&ZONE[zid].pins.length>0); } return; }
+    if(b.dataset.ext){ const on=!!(zi&&zi.ext); b.style.display=on?"":"none"; if(on){ nm.textContent=zi.extNote+(zi.extCount&&!/\d/.test(zi.extNote)?" · "+zi.extCount:""); rl.textContent=zi.roles.join(" · "); wh.className="where tbd"; wh.textContent=[zi.extW&&ZONE[zid].pins.length&&"흰 핀",zi.extG&&"검은 핀"].filter(Boolean).join(" · ")||"자리 지정 없음"; b.classList.toggle("sel",state.selZone===zid); b.classList.toggle("off",!state.zones[zid]&&ZONE[zid].pins.length>0); } return; }
     const n=b.dataset.p, p=o.people[n]; const cz=p?p.zone:null; const off=(cz&&!state.zones[cz]&&ZONE[cz].pins.length>0)||!p;
     b.classList.toggle("off",off); b.querySelector(".id").innerHTML=(state.me===n?'<span class="me" title="내 이름"></span>':"");
     rl.textContent=p?((cz&&cz!==zid?zname(cz)+" · ":"")+p.role+(p.note?" · "+p.note:"")):"이 시간대 배정 없음";
@@ -1358,9 +1369,10 @@ function frame(now){
     p.grp.position.set(p.cur.x,floorY[p.floor]+p.cur.y,p.cur.z);
     const ext=p.kind==="ext", isSel=state.sel===key||(ext&&state.selZone===p.zone), isHov=state.hover===key, isMe=state.me===key, dim=(anySel||!!state.selZone)&&!isSel;
     const sc=p.scale*(isSel?1.18:isHov?1.1:1); p.grp.scale.set(sc,sc,sc);
-    p.headMat.color.setHex(ext?0xEFEAE0:(isSel?0xFF2A2A:0xF40909)); p.headMat.emissive.setHex(ext?0x000000:(isSel?0x5a0000:0x2a0000));
-    p.mat.color.setHex(ext?0xB33A36:(isSel?0xFF2A2A:0xF40909)); p.mat.emissive.setHex((isSel&&!ext)?0x5a0000:(ext?0x000000:0x2a0000));
-    p.headMat.opacity=dim?0.32:(ext?0.92:1); p.mat.opacity=dim?0.3:(ext?0.85:1); p.hollow.visible=ext; p.hollow.material.opacity=dim?0.3:0.95;
+    const gd=ext&&p.info&&p.info.guard;
+    p.headMat.color.setHex(gd?0x1E1B22:ext?0xEFEAE0:(isSel?0xFF2A2A:0xF40909)); p.headMat.emissive.setHex(ext?0x000000:(isSel?0x5a0000:0x2a0000));
+    p.mat.color.setHex(gd?0x1E1B22:ext?0xB33A36:(isSel?0xFF2A2A:0xF40909)); p.mat.emissive.setHex((isSel&&!ext)?0x5a0000:(ext?0x000000:0x2a0000));
+    p.headMat.opacity=dim?0.32:(ext&&!gd?0.92:1); p.mat.opacity=dim?0.3:(ext&&!gd?0.85:1); p.hollow.visible=ext&&!gd; p.hollow.material.opacity=dim?0.3:0.95;
     p.ring.visible=(isSel&&!ext)||isMe; p.ring.material.color.setHex(isSel?0xFFFFFF:0x5B85EA); }
   G.route.children.forEach(c=>{ if(c.userData.floor) c.visible=state.floors[c.userData.floor]; });
   if(Math.abs(ex-lastExplode)>0.002){ refreshRouteGeometry(false); lastExplode=ex; }
